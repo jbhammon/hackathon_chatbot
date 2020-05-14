@@ -35,11 +35,11 @@ bot.on('message', data => {
     return;
   }
   console.log(data)
-  handleMessage(data.text, data.channel);
+  handleMessage(data.text, data.channel, data.user);
 });
 
 // Respons to Data
-function handleMessage(message, channel) {
+function handleMessage(message, channel, user) {
   if (message.includes(' start')) {
     startGame(channel);
   }
@@ -66,53 +66,57 @@ function startGame(channel) {
   bot.postMessage(channel, `Game created. Please choose your individual classes by typing @MUD_Bot <class name>. You are able to play as a WIZARD, a WARRIOR, or an ARCHER.`);  
 }
 
+function createCharacter(channel, user) {
 
-
-
-function chuckJoke(channel) {
-  axios.get('http://api.icndb.com/jokes/random').then(res => {
-    const joke = res.data.value.joke;
-
-    const params = {
-      icon_emoji: ':laughing:'
-    };
-
-    bot.postMessage(channel, `Chuck Norris: ${joke}`, params);
-  });
+  
 }
 
-// Tell a Yo Mama Joke
-function yoMamaJoke(channel) {
-  axios.get('http://api.yomomma.info').then(res => {
-    const joke = res.data.joke;
 
-    const params = {
-      icon_emoji: ':laughing:'
-    };
 
-    bot.postMessage(channel, `Yo Mama: ${joke}`, params);
-  });
-}
+// function chuckJoke(channel) {
+//   axios.get('http://api.icndb.com/jokes/random').then(res => {
+//     const joke = res.data.value.joke;
 
-// Tell a Random Joke
-function randomJoke(channel) {
-  const rand = Math.floor(Math.random() * 2) + 1;
-  if (rand === 1) {
-    chuckJoke(channel);
-  } else if (rand === 2) {
-    yoMamaJoke(channel);
-  }
-}
+//     const params = {
+//       icon_emoji: ':laughing:'
+//     };
 
-// Show Help Text
-function runHelp(channel) {
-  const params = {
-    icon_emoji: ':question:'
-  };
+//     bot.postMessage(channel, `Chuck Norris: ${joke}`, params);
+//   });
+// }
 
-  bot.postMessage(
-    channel,
-    `Type @jokebot with either 'chucknorris', 'yomama' or 'random' to get a joke`,
-    params
-  );
-}
+// // Tell a Yo Mama Joke
+// function yoMamaJoke(channel) {
+//   axios.get('http://api.yomomma.info').then(res => {
+//     const joke = res.data.joke;
+
+//     const params = {
+//       icon_emoji: ':laughing:'
+//     };
+
+//     bot.postMessage(channel, `Yo Mama: ${joke}`, params);
+//   });
+// }
+
+// // Tell a Random Joke
+// function randomJoke(channel) {
+//   const rand = Math.floor(Math.random() * 2) + 1;
+//   if (rand === 1) {
+//     chuckJoke(channel);
+//   } else if (rand === 2) {
+//     yoMamaJoke(channel);
+//   }
+// }
+
+// // Show Help Text
+// function runHelp(channel) {
+//   const params = {
+//     icon_emoji: ':question:'
+//   };
+
+//   bot.postMessage(
+//     channel,
+//     `Type @jokebot with either 'chucknorris', 'yomama' or 'random' to get a joke`,
+//     params
+//   );
+// }
