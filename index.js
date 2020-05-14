@@ -9,7 +9,7 @@ let db = new sqlite3.Database('./database.db', (err) => {
 });
 
 const bot = new SlackBot({
-  token: 'xoxb-1147899033712-1137335766497-1oovMAcjlalWtDu2WotykOIZ',
+  token: 'TOKEN GOES HERE',
   name: 'rpg_bot'
 });
 
