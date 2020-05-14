@@ -1,5 +1,5 @@
 {
-  "name": "slack_jokebot",
+  "name": "slack_rpgbot",
   "version": "1.0.0",
   "description": "Slackbot that tells random jokes",
   "main": "index.js",
@@ -10,6 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "axios": "^0.18.0",
-    "slackbots": "^1.1.0"
+    "slackbots": "^1.1.0",
+    "sqlite3": "^4.2.0"
   }
 }
