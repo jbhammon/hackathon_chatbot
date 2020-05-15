@@ -35,42 +35,132 @@ bot.on('message', data => {
   if (data.type !== 'message') {
     return;
   }
-  console.log(data)
-  handleMessage(data.text, data.channel, data.user);
+  handleMessage(data.text, data.channel, data.user, data.subtype);
 });
 
 // Respons to Data
-function handleMessage(message, channel, user) {
-  if (message.includes(' start')) {
-    startGame(channel);
-  }
+async function handleMessage(message, channel, user, subtype) {
+  
+  if (subtype !== 'bot_message') {
+    var prog = await findProgression(channel);
 
-  // } else if (message.includes(' yomama')) {
-  //   yoMamaJoke(channel);
-  // } else if (message.includes(' random')) {
-  //   randomJoke(channel);
-  // } else if (message.includes(' help')) {
-  //   runHelp(channel);
-  // }
+    if (prog < 0){
+      if (message.includes(' start')) {
+        startGame(channel);
+      } else {
+        bot.postMessage(channel, `You need to start a game! Do so by typing "@MUD_Bot start"`)
+      }
+    } else {
+      if (message.includes(' start')) {
+        bot.postMessage(channel, 'You already have a game in progress!')
+      }
+    }
+
+    if (prog === 0) {
+
+      if (message.includes(' register')){
+        if (message.includes(' archer')){
+          createCharacter(channel, user, "archer")
+        } else if (message.includes(' wizard')){
+          createCharacter(channel, user, "wizard")
+        } else if (message.includes(' warrior')){
+          createCharacter(channel, user, "warrior")
+        }
+      } else if (message.includes(' ready')){
+        updateProgression(channel, prog + 1)
+        bot.postMessage(channel, 'Welcome to your adventure. Your task is to defeat monsters of increasing difficulty in order to save your office and collect rewards. Your first opponent is JAMMED PRINTER, the fearless. Please begin your battle by typing "@MUD_Bot Attack"! Good Luck!')
+      }
+    }
+
+
+
+  }
 }
 
 function startGame(channel) {
   let value = channel;
 
-  db.run(`INSERT INTO games(Channel, Progression) VALUES (?, ?)`, [value, 1] , function(err) {
+  db.run(`INSERT INTO games(Channel, Progression) VALUES (?, ?)`, [value, 0] , function(err) {
     if (err) {
       return console.log(err.message);
     }
     // get the last insert id
     console.log(`A row has been inserted with rowid ${this.lastID}`);
   });
-  bot.postMessage(channel, `Game created. Please choose your individual classes by typing @MUD_Bot <class name>. You are able to play as a WIZARD, a WARRIOR, or an ARCHER.`);
+  bot.postMessage(channel, `Game created. Please choose your individual classes by typing @MUD_Bot register <class name>. You are able to play as a WIZARD, a WARRIOR, or an ARCHER.`);
 }
 
-function createCharacter(channel, user) {
+function updateProgression(channel, prog) {
+  db.run(`UPDATE games SET Progression = ? WHERE Channel = ?`, [prog, channel] , function(err) {
+    if (err) {
+      return console.log(err.message);
+    }
+    // get the last insert id
+    console.log(`A row has been updated`);
+  });
+}
 
+function createCharacter(channel, user, profession) {
+  db.run(`INSERT INTO players(slack_id, channel_id, class, level, health) VALUES (?, ?, ?, ?, ?)`, [user, channel, profession, 1, 100] , function(err) {
+    if (err) {
+      return console.log(err.message);
+    }
+    // get the last insert id
+    console.log(`A row has been inserted with rowid ${this.lastID}`);
+  });
+  bot.postMessage(channel, `${profession} chosen. Please type "@MUD_Bot ready" when all players are ready to begin the adventure!`)
 
 }
+
+function findProgression(channel){
+  return new Promise(async function (resolve, reject) {
+    db.get(`SELECT * from games WHERE Channel = ?`, channel, (err, row) => {
+      if (err) {
+        return console.log(err.message);
+      }
+      // return new Promise( function (resolve, reject) {
+      //   resolve(row.Progression)
+      // });
+      if (row !== undefined){
+        resolve(row.Progression)
+      } else {
+        resolve(-1)
+      }
+    });
+  });
+}
+    
+
+
+//   })
+//   db.get(`SELECT * from games WHERE Channel = ?`, channel, (err, row) => {
+//     if (err) {
+//       return console.log(err.message);
+//     }
+//     // return new Promise( function (resolve, reject) {
+//     //   resolve(row.Progression)
+//     // });
+//     console.log(row.Progression)
+//     return row.Progression
+//   });
+//   // bot.postMessage(channel, 'Yo this game exists')
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
