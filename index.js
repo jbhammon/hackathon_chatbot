@@ -1,5 +1,6 @@
 const SlackBot = require('slackbots');
 const sqlite3 = require('sqlite3').verbose();
+const bot_token = require('./slack_token');
 
 let db = new sqlite3.Database('./database.db', (err) => {
   if (err) {
@@ -9,7 +10,7 @@ let db = new sqlite3.Database('./database.db', (err) => {
 });
 
 const bot = new SlackBot({
-  token: 'TOKEN GOES HERE',
+  token: bot_token.token,
   name: 'rpg_bot'
 });
 
@@ -63,12 +64,12 @@ function startGame(channel) {
     // get the last insert id
     console.log(`A row has been inserted with rowid ${this.lastID}`);
   });
-  bot.postMessage(channel, `Game created. Please choose your individual classes by typing @MUD_Bot <class name>. You are able to play as a WIZARD, a WARRIOR, or an ARCHER.`);  
+  bot.postMessage(channel, `Game created. Please choose your individual classes by typing @MUD_Bot <class name>. You are able to play as a WIZARD, a WARRIOR, or an ARCHER.`);
 }
 
 function createCharacter(channel, user) {
 
-  
+
 }
 
 
