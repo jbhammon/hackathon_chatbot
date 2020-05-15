@@ -40,7 +40,7 @@ bot.on('message', data => {
 
 // Respons to Data
 async function handleMessage(message, channel, user, subtype) {
-  
+
   if (subtype !== 'bot_message') {
     var prog = await findProgression(channel);
 
@@ -67,8 +67,10 @@ async function handleMessage(message, channel, user, subtype) {
           createCharacter(channel, user, "warrior")
         }
       } else if (message.includes(' ready')){
-        updateProgression(channel, prog + 1)
-        bot.postMessage(channel, 'Welcome to your adventure. Your task is to defeat monsters of increasing difficulty in order to save your office and collect rewards. Your first opponent is JAMMED PRINTER, the fearless. Please begin your battle by typing "@MUD_Bot Attack"! Good Luck!')
+        updateProgression(channel, prog + 1);
+        let numberOfPlayers = await countPlayersInGame(channel);
+        updatePlayersInGame(channel, numberOfPlayers);
+        bot.postMessage(channel, 'Welcome to your adventure. Your task is to defeat monsters of increasing difficulty in order to save your office and collect rewards. Your first opponent is JAMMED PRINTER, the fearless. Please begin your battle by typing "@MUD_Bot Attack"! Good Luck!');
       }
     }
 
@@ -80,7 +82,7 @@ async function handleMessage(message, channel, user, subtype) {
 function startGame(channel) {
   let value = channel;
 
-  db.run(`INSERT INTO games(Channel, Progression) VALUES (?, ?)`, [value, 0] , function(err) {
+  db.run(`INSERT INTO games(Channel, Progression, Number_players, Turns_taken) VALUES (?, ?, ?, ?)`, [value, 0, 0, 0] , function(err) {
     if (err) {
       return console.log(err.message);
     }
@@ -112,15 +114,36 @@ function createCharacter(channel, user, profession) {
 
 }
 
+function countPlayersInGame(channel) {
+  return new Promise(function (resolve, reject) {
+    db.all(`SELECT * FROM players WHERE channel_id = ?`, channel, (err, rows) => {
+      if (err) {
+        return console.log(err.message);
+      }
+      resolve(rows.length);
+    });
+  });
+}
+
+function updatePlayersInGame(channel, numberOfPlayers) {
+  return new Promise(function (resolve, reject) {
+    db.run(`UPDATE games SET Number_players = ? WHERE Channel = ?`, [numberOfPlayers, channel], (err, rows) => {
+      if (err) {
+        console.log(err.message);
+        reject(err.message);
+      }
+      // The game was successfully updated to contain the number of players being included
+      resolve('Success!');
+    });
+  });
+}
+
 function findProgression(channel){
   return new Promise(async function (resolve, reject) {
     db.get(`SELECT * from games WHERE Channel = ?`, channel, (err, row) => {
       if (err) {
         return console.log(err.message);
       }
-      // return new Promise( function (resolve, reject) {
-      //   resolve(row.Progression)
-      // });
       if (row !== undefined){
         resolve(row.Progression)
       } else {
@@ -129,7 +152,7 @@ function findProgression(channel){
     });
   });
 }
-    
+
 
 
 //   })
