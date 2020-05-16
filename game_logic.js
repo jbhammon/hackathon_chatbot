@@ -7,8 +7,6 @@ module.exports = {
         if (err) {
           return console.error(err.message);
         }
-        console.log("Was turn taken?");
-        console.log(row.taken_turn);
         resolve(row.taken_turn);
       });
     });
@@ -57,6 +55,16 @@ module.exports = {
       });
     });
   },
+  resetCountOfTurns: function(db, channel) {
+    return new Promise(resolve => {
+      db.run(`UPDATE games SET Turns_taken = 0 WHERE Channel = ?`, [channel], err => {
+        if (err) {
+          return console.error(err.message);
+        }
+        resolve(`Game ${channel} reset the number of turns taken.`);
+      })
+    })
+  },
 
 
   createNextBossInstance: function(db, channel, progression) {
@@ -74,5 +82,31 @@ module.exports = {
         }
       })
     })
-  }
+  },
+
+
+  doesAttackLand: function() {
+    const roll = Math.random();
+    if (roll <= 0.75) {
+      return true;
+    }
+    return false;
+  },
+  calculateDamage: function() {
+    const roll = Math.floor(Math.random() * 15);
+    return roll;
+  },
+  damageBoss: function(db, channel, progression, damage) {
+    return new Promise(resolve => {
+      db.run(`UPDATE boss_instances SET health = health - ? WHERE channel_id = ? AND boss_id = ?`, [damage, channel, progression], err => {
+        if (err) {
+          return console.error(err.message);
+        }
+        resolve(`${damage} damage done to the boss.`);
+      })
+    })
+  },
+  damagePlayer: function() {
+    return true;
+  },
 }

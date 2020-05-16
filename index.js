@@ -44,6 +44,7 @@ bot.on('message', data => {
 async function handleMessage(message, channel, user, subtype) {
 
   if (subtype !== 'bot_message') {
+    let nextMsg = '';
     var prog = await findProgression(channel);
 
     // A game hasn't been started in the channel yet
@@ -51,11 +52,13 @@ async function handleMessage(message, channel, user, subtype) {
       if (message.includes(' start')) {
         startGame(channel);
       } else {
-        bot.postMessage(channel, `You need to start a game! Do so by typing "@MUD_Bot start"`)
+        // bot.postMessage(channel, `You need to start a game! Do so by typing "@MUD_Bot start"`)
+        nextMsg = nextMsg.concat('You need to start a game! Do so by typing "@MUD_Bot start"');
       }
     } else {
       if (message.includes(' start')) {
-        bot.postMessage(channel, 'You already have a game in progress!')
+        // bot.postMessage(channel, 'You already have a game in progress!');
+        nextMsg = nextMsg.concat('You already have a game in progress!');
       }
     }
 
@@ -75,7 +78,8 @@ async function handleMessage(message, channel, user, subtype) {
         game_logic.createNextBossInstance(db, channel, prog + 1);
         let numberOfPlayers = await countPlayersInGame(channel);
         updatePlayersInGame(channel, numberOfPlayers);
-        bot.postMessage(channel, 'Welcome to your adventure. Your task is to defeat monsters of increasing difficulty in order to save your office and collect rewards. Your first opponent is JAMMED PRINTER, the fearless. Please begin your battle by typing "@MUD_Bot Attack"! Good Luck!');
+        // bot.postMessage(channel, 'Welcome to your adventure. Your task is to defeat monsters of increasing difficulty in order to save your office and collect rewards. Your first opponent is JAMMED PRINTER, the fearless. Please begin your battle by typing "@MUD_Bot Attack"! Good Luck!');
+        nextMsg = nextMsg.concat('Welcome to your adventure. Your task is to defeat monsters of increasing difficulty in order to save your office and collect rewards. Your first opponent is JAMMED PRINTER, the fearless. Please begin your battle by typing "@MUD_Bot Attack"! Good Luck!');
       }
     }
 
@@ -86,14 +90,35 @@ async function handleMessage(message, channel, user, subtype) {
       if( !takenTurn ) {
         // determine which action they chose
         if (message.includes(' attack')) {
-          // apply effects of that action
-          bot.postMessage(channel, 'You chose to attack.');
+          // bot.postMessage(channel, 'You chose to attack.');
+          nextMsg = nextMsg.concat('You chose to attack.\n')
+          // determine if the attack lands
+            if (game_logic.doesAttackLand()) {
+              let damageDone = game_logic.calculateDamage();
+              // apply damage to boss
+              await game_logic.damageBoss(db, channel, prog, damageDone);
+              // send message about damage done to boss
+              // bot.postMessage(channel, 'Your attack did ' + damageDone + ' damage.');
+              nextMsg = nextMsg.concat('Your attack did ' + damageDone + ' damage.\n');
+            } else {
+              // send message about attack missing
+              // bot.postMessage(channel, 'Your attack missed.');
+              nextMsg = nextMsg.concat('Your attack missed.\n');
+            }
         } else if (message.includes(' dodge')) {
-          // apply effects of that action
-          bot.postMessage(channel, 'You chose to dodge.');
+          // bot.postMessage(channel, 'You chose to dodge.');
+          nextMsg = nextMsg.concat('You chose to dodge.\n');
+          // determine if dodge worked
+          // if yes
+            // update player's dodge flag to 1
+            // reset all dodge flags at the end of the boss turn
+          // if no
+            // nothing
         } else if (message.includes(' heal')) {
-          // apply effects of that action
-          bot.postMessage(channel, 'You chose to heal.');
+          // bot.postMessage(channel, 'You chose to heal.');
+          nextMsg = nextMsg.concat('You chose to heal.\n');
+          // calculate amount healed
+          // add it to the player's health
         }
 
 
@@ -106,34 +131,41 @@ async function handleMessage(message, channel, user, subtype) {
           // reset all player turn flags and count of turns taken
         } else {
           // update player's turn flag
+          debugger;
           await game_logic.markTurnTaken(db, channel, user);
           // increment count of turns taken
           await game_logic.incrementTurnCounter(db, channel);
           // if all player turns are taken
-          if(await game_logic.checkAllTurnsTaken) {
+          const endOfTurn = await game_logic.checkAllTurnsTaken(db, channel);
+          console.log(endOfTurn);
+          if(endOfTurn) {
             // reset all player turn flags
             game_logic.resetPlayerTurnFlags(db, channel);
             // reset count of turns taken
+            game_logic.resetCountOfTurns(db, channel);
             // Send message that it's the boss' turn
-            bot.postMessage(channel, 'All players have taken their turn. Now it\'s the boss\' turn!');
+            // bot.postMessage(channel, 'All players have taken their turn. Now it\'s the boss\' turn!');
+            nextMsg = nextMsg.concat('All players have taken their turn. Now it\'s the boss\' turn!\n');
             // Boss takes their turn
             // send message describing boss' action
             // apply effects of that action
             // if a player reaches 0 health
               // something happens...?
             // send message that it's the players' turns again
-            bot.postMessage(channel, 'It\'s your turn again!');
+            // bot.postMessage(channel, 'It\'s your turn again!');
+            nextMsg = nextMsg.concat('It\'s your turn again!\n');
           } else {
             // Send message that players still have turns to take
           }
         }
       } else {
         // send message to remind player they've already taken their turn
-        bot.postMessage(channel, 'You already took your turn.')
+        // bot.postMessage(channel, 'You already took your turn.')
+        nextMsg = nextMsg.concat('You already took your turn.');
       }
     }
 
-
+    bot.postMessage(channel, nextMsg);
 
   }
 }
