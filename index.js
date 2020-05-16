@@ -131,13 +131,11 @@ async function handleMessage(message, channel, user, subtype) {
           // reset all player turn flags and count of turns taken
         } else {
           // update player's turn flag
-          debugger;
           await game_logic.markTurnTaken(db, channel, user);
           // increment count of turns taken
           await game_logic.incrementTurnCounter(db, channel);
           // if all player turns are taken
           const endOfTurn = await game_logic.checkAllTurnsTaken(db, channel);
-          console.log(endOfTurn);
           if(endOfTurn) {
             // reset all player turn flags
             game_logic.resetPlayerTurnFlags(db, channel);
