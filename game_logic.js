@@ -92,9 +92,40 @@ module.exports = {
     }
     return false;
   },
+  doesDodgeWork: function() {
+    const roll = Math.random();
+    if (roll <= 0.6) {
+      return true;
+    }
+    return false;
+  },
+  setDodgeFlag: function(db, channel, user, value) {
+    return new Promise(resolve => {
+      db.run(`UPDATE players SET is_dodging = ? WHERE channel_id = ? AND slack_id = ?`, [value, channel, user], err => {
+        if (err) {
+          return console.error(err.message);
+        }
+        resolve(`${user} is ready to dodge an attack.`);
+      });
+    });
+  },
+  resetAllDodgeFlags: function(db, channel) {
+    return new Promise(resolve => {
+      db.run(`UPDATE players SET is_dodging = 0 WHERE channel_id = ?`, [channel], err => {
+        if (err) {
+          return console.error(err.message);
+        }
+        resolve(`Players are no longer ready to dodge attacks.`);
+      });
+    });
+  },
   calculateDamage: function() {
     const roll = Math.floor(Math.random() * 15);
     return roll;
+  },
+  calculateHeal: function() {
+    const roll = Math.floor(Math.random() * 15);
+    return roll
   },
   damageBoss: function(db, channel, progression, damage) {
     return new Promise(resolve => {
@@ -103,10 +134,30 @@ module.exports = {
           return console.error(err.message);
         }
         resolve(`${damage} damage done to the boss.`);
-      })
-    })
+      });
+    });
   },
   damagePlayer: function() {
     return true;
   },
+  healPlayer: function(db, channel, user, heal) {
+    return new Promise(resolve => {
+      db.run(`UPDATE players SET health = health + ? WHERE channel_id = ? AND slack_id = ?`, [heal, channel, user], err => {
+        if (err) {
+          return console.error(err.message);
+        }
+        resolve(`${heal} health was restored to ${user}.`);
+      });
+    });
+  },
+  getPlayerHealth: function(db, channel, user) {
+    return new Promise(resolve => {
+      db.get(`SELECT * FROM players WHERE channel_id = ? AND slack_id = ?`, [channel, user], (err, row) => {
+        if (err) {
+          return console.error(err.message);
+        }
+        resolve(row.health);
+      });
+    });
+  }
 }

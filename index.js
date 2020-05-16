@@ -98,7 +98,6 @@ async function handleMessage(message, channel, user, subtype) {
               // apply damage to boss
               await game_logic.damageBoss(db, channel, prog, damageDone);
               // send message about damage done to boss
-              // bot.postMessage(channel, 'Your attack did ' + damageDone + ' damage.');
               nextMsg = nextMsg.concat('Your attack did ' + damageDone + ' damage.\n');
             } else {
               // send message about attack missing
@@ -106,19 +105,22 @@ async function handleMessage(message, channel, user, subtype) {
               nextMsg = nextMsg.concat('Your attack missed.\n');
             }
         } else if (message.includes(' dodge')) {
-          // bot.postMessage(channel, 'You chose to dodge.');
           nextMsg = nextMsg.concat('You chose to dodge.\n');
           // determine if dodge worked
-          // if yes
+          if (game_logic.doesDodgeWork()) {
             // update player's dodge flag to 1
+            await game_logic.setDodgeFlag(db, channel, user, 1);
             // reset all dodge flags at the end of the boss turn
-          // if no
-            // nothing
+          }
         } else if (message.includes(' heal')) {
-          // bot.postMessage(channel, 'You chose to heal.');
           nextMsg = nextMsg.concat('You chose to heal.\n');
           // calculate amount healed
+          let healthGained = game_logic.calculateHeal();
           // add it to the player's health
+          await game_logic.healPlayer(db, channel, user, healthGained);
+          nextMsg = nextMsg.concat('You gained ' + healthGained + ' health.\n');
+          let playerHealth = await game_logic.getPlayerHealth(db, channel, user);
+          nextMsg = nextMsg.concat('Your health is now ' + playerHealth + ' out of 100.\n');
         }
 
 
@@ -147,6 +149,7 @@ async function handleMessage(message, channel, user, subtype) {
             // Boss takes their turn
             // send message describing boss' action
             // apply effects of that action
+            await game_logic.resetAllDodgeFlags(db, channel);
             // if a player reaches 0 health
               // something happens...?
             // send message that it's the players' turns again
@@ -192,7 +195,7 @@ function updateProgression(channel, prog) {
 }
 
 function createCharacter(channel, user, profession) {
-  db.run(`INSERT INTO players(slack_id, channel_id, class, level, health, taken_turn) VALUES (?, ?, ?, ?, ?, ?)`, [user, channel, profession, 1, 100, 0] , function(err) {
+  db.run(`INSERT INTO players(slack_id, channel_id, class, level, health, taken_turn, is_dodging) VALUES (?, ?, ?, ?, ?, ?, ?)`, [user, channel, profession, 1, 100, 0, 0] , function(err) {
     if (err) {
       return console.log(err.message);
     }
