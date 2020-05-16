@@ -85,6 +85,9 @@ async function handleMessage(message, channel, user, subtype) {
 
     // They players are in the typical turn-based point of the game
     else if (prog > 0) {
+      /*
+      Check if player is dead first
+      */
       // if the player hasn't taken their turn yet
       const takenTurn = await game_logic.hasPlayerTakenTurn(db, channel, user)
       if( !takenTurn ) {
@@ -151,10 +154,14 @@ async function handleMessage(message, channel, user, subtype) {
             // apply effects of that action
             await game_logic.resetAllDodgeFlags(db, channel);
             // if a player reaches 0 health
-              // something happens...?
-            // send message that it's the players' turns again
-            // bot.postMessage(channel, 'It\'s your turn again!');
-            nextMsg = nextMsg.concat('It\'s your turn again!\n');
+              // send message that the player died
+            // if all players died
+              // send message that the party all died, good luck next time
+              // reset progression to 0
+            // else
+              // send message that it's the players' turns again
+              // bot.postMessage(channel, 'It\'s your turn again!');
+              nextMsg = nextMsg.concat('It\'s the player\'s turn again!\n');
           } else {
             // Send message that players still have turns to take
           }
