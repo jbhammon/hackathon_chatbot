@@ -46,5 +46,33 @@ module.exports = {
         }
       });
     });
+  },
+  resetPlayerTurnFlags: function(db, channel) {
+    return new Promise(resolve => {
+      db.run(`UPDATE players SET taken_turn = 0 WHERE channel_id = ?`, [channel], err => {
+        if (err) {
+          return console.error(err.message);
+        }
+        resolve(`Game ${channel} reset all the player turn flags.`);
+      });
+    });
+  },
+
+
+  createNextBossInstance: function(db, channel, progression) {
+    return new Promise(resolve => {
+      db.get(`SELECT * FROM boss_info WHERE pk = ?`, [progression], (err, row) => {
+        if (err) {
+          return console.error(err.message);
+        }
+        const health = row.health;
+        db.run(`INSERT INTO boss_instances(channel_id, boss_id, health) VALUES (?,?,?)`, [channel, progression, health]), err => {
+          if (err) {
+            return console.error(err.message);
+          }
+          resolve(`New boss instance for channel ${channel} at progression ${progression} created.`);
+        }
+      })
+    })
   }
 }

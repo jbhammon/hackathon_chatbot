@@ -72,6 +72,7 @@ async function handleMessage(message, channel, user, subtype) {
         }
       } else if (message.includes(' ready')){
         updateProgression(channel, prog + 1);
+        game_logic.createNextBossInstance(db, channel, prog + 1);
         let numberOfPlayers = await countPlayersInGame(channel);
         updatePlayersInGame(channel, numberOfPlayers);
         bot.postMessage(channel, 'Welcome to your adventure. Your task is to defeat monsters of increasing difficulty in order to save your office and collect rewards. Your first opponent is JAMMED PRINTER, the fearless. Please begin your battle by typing "@MUD_Bot Attack"! Good Luck!');
@@ -100,6 +101,7 @@ async function handleMessage(message, channel, user, subtype) {
         if (false) {
           // declare victory
           // update game progression
+          // create next boss instance
           // send message about next event
           // reset all player turn flags and count of turns taken
         } else {
@@ -109,15 +111,18 @@ async function handleMessage(message, channel, user, subtype) {
           await game_logic.incrementTurnCounter(db, channel);
           // if all player turns are taken
           if(await game_logic.checkAllTurnsTaken) {
-            bot.postMessage(channel, 'All players have taken their turn. Now it\'s the boss\' turn!');
-            // reset all player turn flags and count of turns taken
+            // reset all player turn flags
+            game_logic.resetPlayerTurnFlags(db, channel);
+            // reset count of turns taken
             // Send message that it's the boss' turn
+            bot.postMessage(channel, 'All players have taken their turn. Now it\'s the boss\' turn!');
             // Boss takes their turn
             // send message describing boss' action
             // apply effects of that action
             // if a player reaches 0 health
               // something happens...?
             // send message that it's the players' turns again
+            bot.postMessage(channel, 'It\'s your turn again!');
           } else {
             // Send message that players still have turns to take
           }
