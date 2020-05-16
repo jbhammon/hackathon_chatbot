@@ -83,17 +83,30 @@ async function handleMessage(message, channel, user, subtype) {
       // if the player hasn't taken their turn yet
       const takenTurn = await game_logic.hasPlayerTakenTurn(db, channel, user)
       if( !takenTurn ) {
-        bot.postMessage(channel, 'You haven\'t taken a turn yet.')
         // determine which action they chose
-        // apply effects of that action
+        if (message.includes(' attack')) {
+          // apply effects of that action
+          bot.postMessage(channel, 'You chose to attack.');
+        } else if (message.includes(' dodge')) {
+          // apply effects of that action
+          bot.postMessage(channel, 'You chose to dodge.');
+        } else if (message.includes(' heal')) {
+          // apply effects of that action
+          bot.postMessage(channel, 'You chose to heal.');
+        }
+
 
         // if boss is defeated
+        if (false) {
           // declare victory
           // update game progression
           // send message about next event
           // reset all player turn flags and count of turns taken
-        // else
-          // update player's turn flag, increment count of turns taken
+        } else {
+          // update player's turn flag
+          game_logic.markTurnTaken(db, channel, user);
+          // increment count of turns taken
+          game_logic.incrementTurnCounter(db, channel);
           // if all player turns are taken
             // reset all player turn flags and count of turns taken
             // Send message that it's the boss' turn
@@ -105,6 +118,7 @@ async function handleMessage(message, channel, user, subtype) {
             // send message that it's the players' turns again
           // else
             // Send message that players still have turns to take
+          }
         } else {
           // send message to remind player they've already taken their turn
           bot.postMessage(channel, 'You already took your turn.')

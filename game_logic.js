@@ -13,4 +13,24 @@ module.exports = {
       });
     });
   },
+  markTurnTaken: function(db, channel, user) {
+    return new Promise(resolve => {
+      db.run(`UPDATE players SET taken_turn = 1 WHERE slack_id = ? AND channel_id = ?`, [user, channel], err => {
+        if (err) {
+          return console.error(err.message);
+        }
+        resolve(`Player ${user} has taken their turn.`);
+      });
+    });
+  },
+  incrementTurnCounter: function(db, channel) {
+    return new Promise(resolve => {
+      db.run(`UPDATE games SET Turns_taken = Turns_taken + 1 WHERE Channel = ?`, [channel], err => {
+        if (err) {
+          return console.error(err.message);
+        }
+        resolve(`Game ${channel} has incremented the count of turns taken this round.`);
+      });
+    });
+  }
 }
