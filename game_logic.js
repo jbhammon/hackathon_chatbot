@@ -2,6 +2,16 @@
 const axios = require('axios');
 
 module.exports = {
+  checkAllPlayersDead: function(db, channel) {
+    return new Promise(resolve => {
+      db.all(`SELECT * FROM players WHERE channel_id = ? AND health > 0`, [channel], (err, rows) => {
+        if (err) {
+          return console.error(err.message);
+        }
+        resolve(rows.length);
+      });
+    });
+  },
   hasPlayerTakenTurn: function(db, channel, user) {
     return new Promise(resolve => {
       db.get(`SELECT * FROM players WHERE slack_id = ? AND channel_id = ?`, [user, channel], (err, row) => {
@@ -122,7 +132,7 @@ module.exports = {
   },
   determineVictim: function(db, channel) {
     return new Promise(resolve => {
-      db.get(`SELECT * FROM players WHERE channel_id`, [channel], (err, row) => {
+      db.all(`SELECT * FROM players WHERE channel_id = ? AND health > 0`, [channel], (err, row) => {
         if (err) {
           return console.error(err.message);
         }
@@ -190,14 +200,18 @@ module.exports = {
         if (err) {
           return console.error(err.message);
         }
-        const didDodge = row.is_dodging
-
+        const didDodge = row.is_dodging;
+        const newHealth = row.health - damage;
         if (didDodge === 0) {
           db.run(`UPDATE players SET health = health - ? WHERE channel_id = ? AND slack_id = ?`, [damage, channel, user], err => {
             if (err) {
               return console.error(err.message);
             }
-            resolve(`damaged`);
+            if (newHealth <= 0) {
+              resolve('unconscious');
+            } else {
+              resolve('damaged');
+            }
           });
         } else if (didDodge === 1) {
           resolve(`dodged`)
@@ -248,8 +262,13 @@ module.exports = {
   },
   getPlayerInfo: async function(player, token) {
     const data = await axios.get(`https://slack.com/api/users.info?token=${token}&user=${player}`);
-    const displayName = data.data.user.profile.display_name;
-
+    let displayName;
+    if (data.data.user.profile.display_name === '') {
+      displayName = data.data.user.real_name;
+    } else {
+      displayName = data.data.user.profile.display_name;
+    }
+    console.log(displayName);
     return displayName
   },
 

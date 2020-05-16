@@ -75,125 +75,135 @@ async function handleMessage(message, channel, user, subtype) {
 
     // They players are in the typical turn-based point of the game
     else if (prog > 0) {
-      /*
-      Check if player is dead first
-      */
-      // if the player hasn't taken their turn yet
-      const takenTurn = await game_logic.hasPlayerTakenTurn(db, channel, user)
-      if( !takenTurn ) {
-        // determine which action they chose
-        if (message.includes(' attack')) {
-          // bot.postMessage(channel, 'You chose to attack.');
-          nextMsg = nextMsg.concat('You chose to attack.\n')
-          // determine if the attack lands
-            if (game_logic.doesAttackLand()) {
-              let damageDone = game_logic.calculateDamage();
-              // apply damage to boss
-              await game_logic.damageBoss(db, channel, prog, damageDone);
-              // send message about damage done to boss
-              nextMsg = nextMsg.concat('Your attack did ' + damageDone + ' damage.\n');
-            } else {
-              // send message about attack missing
-              // bot.postMessage(channel, 'Your attack missed.');
-              nextMsg = nextMsg.concat('Your attack missed.\n');
+
+      // is the player unconscious?
+      let playerHealth = await game_logic.getPlayerHealth(db, channel, user);
+      if (playerHealth <= 0) {
+        nextMsg = nextMsg.concat('You\'re unconscious!\n');
+      } else {
+        // if the player hasn't taken their turn yet
+        const takenTurn = await game_logic.hasPlayerTakenTurn(db, channel, user)
+        if( !takenTurn ) {
+          // determine which action they chose
+          if (message.includes(' attack')) {
+            // bot.postMessage(channel, 'You chose to attack.');
+            nextMsg = nextMsg.concat('You chose to attack.\n')
+            // determine if the attack lands
+              if (game_logic.doesAttackLand()) {
+                let damageDone = game_logic.calculateDamage();
+                // apply damage to boss
+                await game_logic.damageBoss(db, channel, prog, damageDone);
+                // send message about damage done to boss
+                nextMsg = nextMsg.concat('Your attack did ' + damageDone + ' damage.\n');
+              } else {
+                // send message about attack missing
+                // bot.postMessage(channel, 'Your attack missed.');
+                nextMsg = nextMsg.concat('Your attack missed.\n');
+              }
+          } else if (message.includes(' dodge')) {
+            nextMsg = nextMsg.concat('You chose to dodge.\n');
+            // determine if dodge worked
+            if (game_logic.doesDodgeWork()) {
+              // update player's dodge flag to 1
+              await game_logic.setDodgeFlag(db, channel, user, 1);
+              // reset all dodge flags at the end of the boss turn
             }
-        } else if (message.includes(' dodge')) {
-          nextMsg = nextMsg.concat('You chose to dodge.\n');
-          // determine if dodge worked
-          if (game_logic.doesDodgeWork()) {
-            // update player's dodge flag to 1
-            await game_logic.setDodgeFlag(db, channel, user, 1);
-            // reset all dodge flags at the end of the boss turn
+          } else if (message.includes(' heal')) {
+            nextMsg = nextMsg.concat('You chose to heal.\n');
+            // calculate amount healed
+            let healthGained = game_logic.calculateHeal();
+            // add it to the player's health
+            await game_logic.healPlayer(db, channel, user, healthGained);
+            nextMsg = nextMsg.concat('You gained ' + healthGained + ' health.\n');
+            let playerHealth = await game_logic.getPlayerHealth(db, channel, user);
+            nextMsg = nextMsg.concat('Your health is now ' + playerHealth + ' out of 100.\n');
           }
-        } else if (message.includes(' heal')) {
-          nextMsg = nextMsg.concat('You chose to heal.\n');
-          // calculate amount healed
-          let healthGained = game_logic.calculateHeal();
-          // add it to the player's health
-          await game_logic.healPlayer(db, channel, user, healthGained);
-          nextMsg = nextMsg.concat('You gained ' + healthGained + ' health.\n');
-          let playerHealth = await game_logic.getPlayerHealth(db, channel, user);
-          nextMsg = nextMsg.concat('Your health is now ' + playerHealth + ' out of 100.\n');
-        }
 
 
-        // if boss is defeated
-        if (false) {
-          // declare victory
-          nextMsg = nextMsg.concat('You defeated the boss!\n');
-          // update game progression
-          updateProgression(channel, prog + 1);
-          // create next boss instance
-          game_logic.createNextBossInstance(db, channel, prog + 1);
-          // send message about next event
-          nextMsg = nextMsg.concat('Get ready for the next boss!\n');
-          // reset all player turn flags
-          game_logic.resetPlayerTurnFlags(db, channel);
-          // reset count of turns taken
-          game_logic.resetCountOfTurns(db, channel);
-        } else {
-          // update player's turn flag
-          await game_logic.markTurnTaken(db, channel, user);
-          // increment count of turns taken
-          await game_logic.incrementTurnCounter(db, channel);
-          // if all player turns are taken
-          const endOfTurn = await game_logic.checkAllTurnsTaken(db, channel);
-          if(endOfTurn) {
+          // if boss is defeated
+          if (false) {
+            // declare victory
+            nextMsg = nextMsg.concat('You defeated the boss!\n');
+            // update game progression
+            updateProgression(channel, prog + 1);
+            // create next boss instance
+            game_logic.createNextBossInstance(db, channel, prog + 1);
+            // send message about next event
+            nextMsg = nextMsg.concat('Get ready for the next boss!\n');
             // reset all player turn flags
             game_logic.resetPlayerTurnFlags(db, channel);
             // reset count of turns taken
             game_logic.resetCountOfTurns(db, channel);
-            // Send message that it's the boss' turn
-            nextMsg = nextMsg.concat('All players have taken their turn. Now it\'s the boss\' turn!\n');
-            // Boss takes their turn
-
-            let boss_action = await game_logic.determineBossAction(db, channel, prog);
-            if (boss_action === "heal"){
-              nextMsg = nextMsg.concat('The boss chose to heal.\n');
-              //calculate how much health boss heals
-              let bossHealthGain = game_logic.calculateBossHeal();
-              //heal the boss
-              await game_logic.healBoss(db, channel, prog, bossHealthGain);
-              //get boss's health
-              let bossHealth = await game_logic.getBossHealth(db, channel, prog);
-              nextMsg = nextMsg.concat('The boss healed ' + bossHealthGain + ' health and now has ' + bossHealth[0] + '/' + bossHealth[1] + ' health.\n');
-            } else if (boss_action === "attack"){
-              //calculate damage done to random player
-              let bossDamage = await game_logic.calculateBossDamage(db, prog);
-              //determine which player receives damage
-              let victim = await game_logic.determineVictim(db, channel);
-
-              //find the user name of the victim
-              let userHandle = await game_logic.getPlayerInfo(victim, bot_token.token);
-
-              //deal damage to player
-
-              let damageResult = await game_logic.damagePlayer(db, channel, victim, bossDamage)
-              if (damageResult === "damaged"){
-                nextMsg = nextMsg.concat(`The boss attacked ${userHandle} and dealt ${bossDamage} damage.`)
-              } else if (damageResult === "dodged") {
-                nextMsg = nextMsg.concat(`${userHandle} dodged the boss's attack and took no damage.`)
-              }
-            }
-
-            // apply effects of that action
-            await game_logic.resetAllDodgeFlags(db, channel);
-            // if a player reaches 0 health
-              // send message that the player died
-            // if all players died
-              // send message that the party all died, good luck next time
-              // reset progression to 0
-            // else
-              // send message that it's the players' turns again
-              // bot.postMessage(channel, 'It\'s your turn again!');
-              nextMsg = nextMsg.concat('It\'s the player\'s turn again!\n');
           } else {
-            // Send message that players still have turns to take
+            // update player's turn flag
+            await game_logic.markTurnTaken(db, channel, user);
+            // increment count of turns taken
+            await game_logic.incrementTurnCounter(db, channel);
+            // if all player turns are taken
+            const endOfTurn = await game_logic.checkAllTurnsTaken(db, channel);
+            if(endOfTurn) {
+              // reset all player turn flags
+              game_logic.resetPlayerTurnFlags(db, channel);
+              // reset count of turns taken
+              game_logic.resetCountOfTurns(db, channel);
+              // Send message that it's the boss' turn
+              nextMsg = nextMsg.concat('All players have taken their turn. Now it\'s the boss\' turn!\n');
+              // Boss takes their turn
+
+              let boss_action = await game_logic.determineBossAction(db, channel, prog);
+              if (boss_action === "heal"){
+                nextMsg = nextMsg.concat('The boss chose to heal.\n');
+                //calculate how much health boss heals
+                let bossHealthGain = game_logic.calculateBossHeal();
+                //heal the boss
+                await game_logic.healBoss(db, channel, prog, bossHealthGain);
+                //get boss's health
+                let bossHealth = await game_logic.getBossHealth(db, channel, prog);
+                nextMsg = nextMsg.concat('The boss healed ' + bossHealthGain + ' health and now has ' + bossHealth[0] + '/' + bossHealth[1] + ' health.\n');
+              } else if (boss_action === "attack"){
+                //calculate damage done to random player
+                let bossDamage = await game_logic.calculateBossDamage(db, prog);
+                //determine which player receives damage
+                let victim = await game_logic.determineVictim(db, channel);
+
+                //find the user name of the victim
+                let userHandle = await game_logic.getPlayerInfo(victim, bot_token.token);
+                console.log(userHandle);
+
+                //deal damage to player
+
+                let damageResult = await game_logic.damagePlayer(db, channel, victim, bossDamage)
+                if (damageResult === "damaged"){
+                  nextMsg = nextMsg.concat(`The boss attacked ${userHandle} and dealt ${bossDamage} damage.`)
+                } else if (damageResult === "dodged") {
+                  nextMsg = nextMsg.concat(`${userHandle} dodged the boss's attack and took no damage.`)
+                } else if (damageResult === 'unconscious') {
+                  nextMsg = nextMsg.concat(`The boss attacked ${userHandle}. It dealt ${bossDamage} damage and ${userHandle} is now unconscious.`);
+                }
+              }
+
+              // apply effects of that action
+              await game_logic.resetAllDodgeFlags(db, channel);
+              // if all players died
+              const playersAlive = await game_logic.checkAllPlayersDead(db, channel);
+              if (playersAlive === 0) {
+                // send message that the party all died, good luck next time
+                nextMsg = nextMsg.concat('Everyone in the party is unconscious, better luck next time!\n');
+                // reset progression to 0
+                updateProgression(channel, 0);
+              }
+              // else
+                // send message that it's the players' turns again
+                // bot.postMessage(channel, 'It\'s your turn again!');
+                nextMsg = nextMsg.concat('It\'s the player\'s turn again!\n');
+            } else {
+              // Send message that players still have turns to take
+            }
           }
+        } else {
+          // send message to remind player they've already taken their turn
+          nextMsg = nextMsg.concat('You already took your turn.');
         }
-      } else {
-        // send message to remind player they've already taken their turn
-        nextMsg = nextMsg.concat('You already took your turn.');
       }
     }
 
@@ -226,15 +236,29 @@ function updateProgression(channel, prog) {
 }
 
 function createCharacter(channel, user, profession) {
-  db.run(`INSERT INTO players(slack_id, channel_id, class, level, health, taken_turn, is_dodging) VALUES (?, ?, ?, ?, ?, ?, ?)`, [user, channel, profession, 1, 100, 0, 0] , function(err) {
-    if (err) {
-      return console.log(err.message);
-    }
-    // get the last insert id
-    console.log(`A row has been inserted with rowid ${this.lastID}`);
+  return new Promise(resolve => {
+    db.get(`SELECT * FROM players WHERE slack_id = ? AND channel_id = ?`, [user, channel], (err, row) => {
+      if (err) {
+        return console.error(err.message);
+      }
+      if (row) {
+        db.run(`UPDATE players SET class = ? health = 100 taken_turn = 0 is_dodging = 0 WHERE slack_id = ? AND channel_id = ?`, [profession, user, channel] , function(err) {
+          if (err) {
+            return console.log(err.message);
+          }
+          resolve(`Updated ${user}'s character.'`);
+        });
+      } else {
+        db.run(`INSERT INTO players(slack_id, channel_id, class, level, health, taken_turn, is_dodging) VALUES (?, ?, ?, ?, ?, ?, ?)`, [user, channel, profession, 1, 100, 0, 0] , function(err) {
+          if (err) {
+            return console.log(err.message);
+          }
+          bot.postMessage(channel, `${profession} chosen. Please type "@MUD_Bot ready" when all players are ready to begin the adventure!`);
+          resolve(`Created ${user}'s character.'`);
+        });
+      }
+    });
   });
-  bot.postMessage(channel, `${profession} chosen. Please type "@MUD_Bot ready" when all players are ready to begin the adventure!`)
-
 }
 
 function countPlayersInGame(channel) {
