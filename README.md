@@ -21,7 +21,6 @@ npm start
 
 ### Authors
 
-Jackson Hammond
 [Jackson Hammond](https://www.jacksonhammond.com)
 
 Joshua Cutter
