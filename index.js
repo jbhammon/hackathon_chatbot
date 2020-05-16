@@ -2,6 +2,8 @@ const SlackBot = require('slackbots');
 const sqlite3 = require('sqlite3').verbose();
 const bot_token = require('./slack_token');
 
+const game_logic = require('./game_logic');
+
 let db = new sqlite3.Database('./database.db', (err) => {
   if (err) {
     console.error(err.message);
@@ -44,6 +46,7 @@ async function handleMessage(message, channel, user, subtype) {
   if (subtype !== 'bot_message') {
     var prog = await findProgression(channel);
 
+    // A game hasn't been started in the channel yet
     if (prog < 0){
       if (message.includes(' start')) {
         startGame(channel);
@@ -56,6 +59,7 @@ async function handleMessage(message, channel, user, subtype) {
       }
     }
 
+    // A game is started and players need to register the type of character they want to play with
     if (prog === 0) {
 
       if (message.includes(' register')){
@@ -72,6 +76,39 @@ async function handleMessage(message, channel, user, subtype) {
         updatePlayersInGame(channel, numberOfPlayers);
         bot.postMessage(channel, 'Welcome to your adventure. Your task is to defeat monsters of increasing difficulty in order to save your office and collect rewards. Your first opponent is JAMMED PRINTER, the fearless. Please begin your battle by typing "@MUD_Bot Attack"! Good Luck!');
       }
+    }
+
+    // They players are in the typical turn-based point of the game
+    else if (prog > 0) {
+      // if the player hasn't taken their turn yet
+      const takenTurn = await game_logic.hasPlayerTakenTurn(db, channel, user)
+      if( !takenTurn ) {
+        bot.postMessage(channel, 'You haven\'t taken a turn yet.')
+        // determine which action they chose
+        // apply effects of that action
+
+        // if boss is defeated
+          // declare victory
+          // update game progression
+          // send message about next event
+          // reset all player turn flags and count of turns taken
+        // else
+          // update player's turn flag, increment count of turns taken
+          // if all player turns are taken
+            // reset all player turn flags and count of turns taken
+            // Send message that it's the boss' turn
+            // Boss takes their turn
+            // send message describing boss' action
+            // apply effects of that action
+            // if a player reaches 0 health
+              // something happens...?
+            // send message that it's the players' turns again
+          // else
+            // Send message that players still have turns to take
+        } else {
+          // send message to remind player they've already taken their turn
+          bot.postMessage(channel, 'You already took your turn.')
+        }
     }
 
 
@@ -103,7 +140,7 @@ function updateProgression(channel, prog) {
 }
 
 function createCharacter(channel, user, profession) {
-  db.run(`INSERT INTO players(slack_id, channel_id, class, level, health) VALUES (?, ?, ?, ?, ?)`, [user, channel, profession, 1, 100] , function(err) {
+  db.run(`INSERT INTO players(slack_id, channel_id, class, level, health, taken_turn) VALUES (?, ?, ?, ?, ?, ?)`, [user, channel, profession, 1, 100, 0] , function(err) {
     if (err) {
       return console.log(err.message);
     }
@@ -152,7 +189,6 @@ function findProgression(channel){
     });
   });
 }
-
 
 
 //   })
