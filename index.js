@@ -130,10 +130,17 @@ async function handleMessage(message, channel, user, subtype) {
         // if boss is defeated
         if (false) {
           // declare victory
+          nextMsg = nextMsg.concat('You defeated the boss!\n');
           // update game progression
+          updateProgression(channel, prog + 1);
           // create next boss instance
+          game_logic.createNextBossInstance(db, channel, prog + 1);
           // send message about next event
-          // reset all player turn flags and count of turns taken
+          nextMsg = nextMsg.concat('Get ready for the next boss!\n');
+          // reset all player turn flags
+          game_logic.resetPlayerTurnFlags(db, channel);
+          // reset count of turns taken
+          game_logic.resetCountOfTurns(db, channel);
         } else {
           // update player's turn flag
           await game_logic.markTurnTaken(db, channel, user);
