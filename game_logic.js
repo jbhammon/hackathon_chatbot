@@ -32,5 +32,19 @@ module.exports = {
         resolve(`Game ${channel} has incremented the count of turns taken this round.`);
       });
     });
+  },
+  checkAllTurnsTaken: function(db, channel) {
+    return new Promise(resolve => {
+      db.get(`SELECT * FROM games WHERE Channel = ?`, [channel], (err, row) => {
+        if (err) {
+          return console.error(err.message);
+        }
+        if (row.Number_players === row.Turns_taken) {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      });
+    });
   }
 }

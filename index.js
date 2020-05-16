@@ -104,10 +104,12 @@ async function handleMessage(message, channel, user, subtype) {
           // reset all player turn flags and count of turns taken
         } else {
           // update player's turn flag
-          game_logic.markTurnTaken(db, channel, user);
+          await game_logic.markTurnTaken(db, channel, user);
           // increment count of turns taken
-          game_logic.incrementTurnCounter(db, channel);
+          await game_logic.incrementTurnCounter(db, channel);
           // if all player turns are taken
+          if(await game_logic.checkAllTurnsTaken) {
+            bot.postMessage(channel, 'All players have taken their turn. Now it\'s the boss\' turn!');
             // reset all player turn flags and count of turns taken
             // Send message that it's the boss' turn
             // Boss takes their turn
@@ -116,13 +118,14 @@ async function handleMessage(message, channel, user, subtype) {
             // if a player reaches 0 health
               // something happens...?
             // send message that it's the players' turns again
-          // else
+          } else {
             // Send message that players still have turns to take
           }
-        } else {
-          // send message to remind player they've already taken their turn
-          bot.postMessage(channel, 'You already took your turn.')
         }
+      } else {
+        // send message to remind player they've already taken their turn
+        bot.postMessage(channel, 'You already took your turn.')
+      }
     }
 
 
