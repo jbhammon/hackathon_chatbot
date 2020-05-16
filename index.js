@@ -16,19 +16,6 @@ const bot = new SlackBot({
   name: 'rpg_bot'
 });
 
-// // Start Handler
-// bot.on('start', () => {
-//   const params = {
-//     icon_emoji: ':smiley:'
-//   };
-
-//   bot.postMessageToChannel(
-//     'general',
-//     'Get Ready To Laugh With @Jokebot!',
-//     params
-//   );
-// });
-
 // Error Handler
 bot.on('error', err => console.log(err));
 
@@ -37,11 +24,14 @@ bot.on('message', data => {
   if (data.type !== 'message') {
     return;
   }
+
   handleMessage(data.text, data.channel, data.user, data.subtype);
 });
 
 // Respons to Data
 async function handleMessage(message, channel, user, subtype) {
+
+
 
   if (subtype !== 'bot_message') {
     let nextMsg = '';
@@ -154,10 +144,38 @@ async function handleMessage(message, channel, user, subtype) {
             // reset count of turns taken
             game_logic.resetCountOfTurns(db, channel);
             // Send message that it's the boss' turn
-            // bot.postMessage(channel, 'All players have taken their turn. Now it\'s the boss\' turn!');
             nextMsg = nextMsg.concat('All players have taken their turn. Now it\'s the boss\' turn!\n');
             // Boss takes their turn
-            // send message describing boss' action
+
+            let boss_action = await game_logic.determineBossAction(db, channel, prog);
+            if (boss_action === "heal"){
+              nextMsg = nextMsg.concat('The boss chose to heal.\n');
+              //calculate how much health boss heals
+              let bossHealthGain = game_logic.calculateBossHeal();
+              //heal the boss
+              await game_logic.healBoss(db, channel, prog, bossHealthGain);
+              //get boss's health
+              let bossHealth = await game_logic.getBossHealth(db, channel, prog);
+              nextMsg = nextMsg.concat('The boss healed ' + bossHealthGain + ' health and now has ' + bossHealth[0] + '/' + bossHealth[1] + ' health.\n');
+            } else if (boss_action === "attack"){
+              //calculate damage done to random player
+              let bossDamage = await game_logic.calculateBossDamage(db, prog);
+              //determine which player receives damage
+              let victim = await game_logic.determineVictim(db, channel);
+
+              //find the user name of the victim
+              let userHandle = await game_logic.getPlayerInfo(victim, bot_token.token);
+
+              //deal damage to player
+
+              let damageResult = await game_logic.damagePlayer(db, channel, victim, bossDamage)
+              if (damageResult === "damaged"){
+                nextMsg = nextMsg.concat(`The boss attacked ${userHandle} and dealt ${bossDamage} damage.`)
+              } else if (damageResult === "dodged") {
+                nextMsg = nextMsg.concat(`${userHandle} dodged the boss's attack and took no damage.`)
+              }
+            }
+
             // apply effects of that action
             await game_logic.resetAllDodgeFlags(db, channel);
             // if a player reaches 0 health
@@ -175,7 +193,6 @@ async function handleMessage(message, channel, user, subtype) {
         }
       } else {
         // send message to remind player they've already taken their turn
-        // bot.postMessage(channel, 'You already took your turn.')
         nextMsg = nextMsg.concat('You already took your turn.');
       }
     }
@@ -258,84 +275,3 @@ function findProgression(channel){
     });
   });
 }
-
-
-//   })
-//   db.get(`SELECT * from games WHERE Channel = ?`, channel, (err, row) => {
-//     if (err) {
-//       return console.log(err.message);
-//     }
-//     // return new Promise( function (resolve, reject) {
-//     //   resolve(row.Progression)
-//     // });
-//     console.log(row.Progression)
-//     return row.Progression
-//   });
-//   // bot.postMessage(channel, 'Yo this game exists')
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// function chuckJoke(channel) {
-//   axios.get('http://api.icndb.com/jokes/random').then(res => {
-//     const joke = res.data.value.joke;
-
-//     const params = {
-//       icon_emoji: ':laughing:'
-//     };
-
-//     bot.postMessage(channel, `Chuck Norris: ${joke}`, params);
-//   });
-// }
-
-// // Tell a Yo Mama Joke
-// function yoMamaJoke(channel) {
-//   axios.get('http://api.yomomma.info').then(res => {
-//     const joke = res.data.joke;
-
-//     const params = {
-//       icon_emoji: ':laughing:'
-//     };
-
-//     bot.postMessage(channel, `Yo Mama: ${joke}`, params);
-//   });
-// }
-
-// // Tell a Random Joke
-// function randomJoke(channel) {
-//   const rand = Math.floor(Math.random() * 2) + 1;
-//   if (rand === 1) {
-//     chuckJoke(channel);
-//   } else if (rand === 2) {
-//     yoMamaJoke(channel);
-//   }
-// }
-
-// // Show Help Text
-// function runHelp(channel) {
-//   const params = {
-//     icon_emoji: ':question:'
-//   };
-
-//   bot.postMessage(
-//     channel,
-//     `Type @jokebot with either 'chucknorris', 'yomama' or 'random' to get a joke`,
-//     params
-//   );
-// }

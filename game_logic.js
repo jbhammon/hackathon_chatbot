@@ -1,4 +1,5 @@
 // Module to store functions that handle individual actions of the game
+const axios = require('axios');
 
 module.exports = {
   hasPlayerTakenTurn: function(db, channel, user) {
@@ -74,7 +75,7 @@ module.exports = {
           return console.error(err.message);
         }
         const health = row.health;
-        db.run(`INSERT INTO boss_instances(channel_id, boss_id, health) VALUES (?,?,?)`, [channel, progression, health]), err => {
+        db.run(`INSERT INTO boss_instances(channel_id, boss_id, health, total_health) VALUES (?,?,?,?)`, [channel, progression, health, health]), err => {
           if (err) {
             return console.error(err.message);
           }
@@ -87,7 +88,7 @@ module.exports = {
 
   doesAttackLand: function() {
     const roll = Math.random();
-    if (roll <= 0.75) {
+    if (roll <= 0.8) {
       return true;
     }
     return false;
@@ -119,13 +120,59 @@ module.exports = {
       });
     });
   },
+  determineVictim: function(db, channel) {
+    return new Promise(resolve => {
+      db.get(`SELECT * FROM players WHERE channel_id`, [channel], (err, row) => {
+        if (err) {
+          return console.error(err.message);
+        }
+        let randomNo = Math.floor(Math.random() * row.length)
+        resolve(row[randomNo].slack_id)
+      });
+    });
+  },
   calculateDamage: function() {
     const roll = Math.floor(Math.random() * 15);
     return roll;
   },
+  calculateBossDamage: function(db, progression) {
+    return new Promise(resolve => {
+      db.get(`SELECT * FROM boss_info WHERE pk = ?`, [progression], (err, row) => {
+        if (err) {
+          return console.error(err.message);
+        }
+        let power = row.attack_power
+        const roll = Math.floor(Math.random() * 10 * power)
+        resolve(roll)
+      });
+    });
+  },
   calculateHeal: function() {
     const roll = Math.floor(Math.random() * 15);
     return roll
+  },
+  calculateBossHeal: function () {
+    const roll = Math.floor(Math.random() * 10)
+    return roll
+  },
+  determineBossAction: function(db, channel, progression) {
+    return new Promise(resolve => {
+      db.get(`SELECT * FROM boss_instances WHERE channel_id = ? AND boss_id = ?`, [channel, progression], (err, row) => {
+        if (err) {
+          return console.error(err.message);
+        }
+        if (row.health < (.5 * row.total_health)){
+          const roll = Math.random();
+          if (roll <= .4){
+            resolve("heal")
+          } else {
+            resolve("attack")
+          }
+        } else {
+          resolve("attack")
+        }
+      });
+    });
   },
   damageBoss: function(db, channel, progression, damage) {
     return new Promise(resolve => {
@@ -137,8 +184,36 @@ module.exports = {
       });
     });
   },
-  damagePlayer: function() {
-    return true;
+  damagePlayer: function(db, channel, user, damage) {
+    return new Promise(resolve => {
+      db.get(`SELECT * FROM players WHERE channel_id = ? AND slack_id = ?`, [channel, user], (err, row) => {
+        if (err) {
+          return console.error(err.message);
+        }
+        const didDodge = row.is_dodging
+
+        if (didDodge === 0) {
+          db.run(`UPDATE players SET health = health - ? WHERE channel_id = ? AND slack_id = ?`, [damage, channel, user], err => {
+            if (err) {
+              return console.error(err.message);
+            }
+            resolve(`damaged`);
+          });
+        } else if (didDodge === 1) {
+          resolve(`dodged`)
+        }
+      })
+    });
+  },
+  healBoss: function(db, channel, progression, heal) {
+    return new Promise(resolve => {
+      db.run(`UPDATE boss_instances SET health = health + ? WHERE channel_id = ? AND boss_id = ?`, [heal, channel, progression], err => {
+        if (err) {
+          return console.error(err.message);
+        }
+        resolve(`${heal} health was restored to the boss.`);
+      });
+    });
   },
   healPlayer: function(db, channel, user, heal) {
     return new Promise(resolve => {
@@ -159,5 +234,23 @@ module.exports = {
         resolve(row.health);
       });
     });
-  }
+  },
+  getBossHealth: function(db, channel, progression) {
+    return new Promise(resolve => {
+      db.get(`SELECT * FROM boss_instances WHERE channel_id = ? AND boss_id = ?`, [channel, progression], (err, row) => {
+        if (err) {
+          return console.error(err.message);
+        }
+        let healthArray = [row.health, row.total_health]
+        resolve(healthArray);
+      });
+    });
+  },
+  getPlayerInfo: async function(player, token) {
+    const data = await axios.get(`https://slack.com/api/users.info?token=${token}&user=${player}`);
+    const displayName = data.data.user.profile.display_name;
+
+    return displayName
+  },
+
 }
