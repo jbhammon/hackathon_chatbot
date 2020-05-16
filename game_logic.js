@@ -88,7 +88,7 @@ module.exports = {
 
   doesAttackLand: function() {
     const roll = Math.random();
-    if (roll <= 0.75) {
+    if (roll <= 0.8) {
       return true;
     }
     return false;
@@ -163,7 +163,7 @@ module.exports = {
         }
         if (row.health < (.5 * row.total_health)){
           const roll = Math.random();
-          if (roll <= .98){
+          if (roll <= .4){
             resolve("heal")
           } else {
             resolve("attack")

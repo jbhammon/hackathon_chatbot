@@ -16,19 +16,6 @@ const bot = new SlackBot({
   name: 'rpg_bot'
 });
 
-// // Start Handler
-// bot.on('start', () => {
-//   const params = {
-//     icon_emoji: ':smiley:'
-//   };
-
-//   bot.postMessageToChannel(
-//     'general',
-//     'Get Ready To Laugh With @Jokebot!',
-//     params
-//   );
-// });
-
 // Error Handler
 bot.on('error', err => console.log(err));
 
@@ -151,7 +138,6 @@ async function handleMessage(message, channel, user, subtype) {
             // Boss takes their turn
 
             let boss_action = await game_logic.determineBossAction(db, channel, prog);
-            console.log(boss_action)
             if (boss_action === "heal"){
               nextMsg = nextMsg.concat('The boss chose to heal.\n');
               //calculate how much health boss heals
@@ -274,84 +260,3 @@ function findProgression(channel){
     });
   });
 }
-
-
-//   })
-//   db.get(`SELECT * from games WHERE Channel = ?`, channel, (err, row) => {
-//     if (err) {
-//       return console.log(err.message);
-//     }
-//     // return new Promise( function (resolve, reject) {
-//     //   resolve(row.Progression)
-//     // });
-//     console.log(row.Progression)
-//     return row.Progression
-//   });
-//   // bot.postMessage(channel, 'Yo this game exists')
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// function chuckJoke(channel) {
-//   axios.get('http://api.icndb.com/jokes/random').then(res => {
-//     const joke = res.data.value.joke;
-
-//     const params = {
-//       icon_emoji: ':laughing:'
-//     };
-
-//     bot.postMessage(channel, `Chuck Norris: ${joke}`, params);
-//   });
-// }
-
-// // Tell a Yo Mama Joke
-// function yoMamaJoke(channel) {
-//   axios.get('http://api.yomomma.info').then(res => {
-//     const joke = res.data.joke;
-
-//     const params = {
-//       icon_emoji: ':laughing:'
-//     };
-
-//     bot.postMessage(channel, `Yo Mama: ${joke}`, params);
-//   });
-// }
-
-// // Tell a Random Joke
-// function randomJoke(channel) {
-//   const rand = Math.floor(Math.random() * 2) + 1;
-//   if (rand === 1) {
-//     chuckJoke(channel);
-//   } else if (rand === 2) {
-//     yoMamaJoke(channel);
-//   }
-// }
-
-// // Show Help Text
-// function runHelp(channel) {
-//   const params = {
-//     icon_emoji: ':question:'
-//   };
-
-//   bot.postMessage(
-//     channel,
-//     `Type @jokebot with either 'chucknorris', 'yomama' or 'random' to get a joke`,
-//     params
-//   );
-// }
