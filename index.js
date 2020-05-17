@@ -69,7 +69,7 @@ async function handleMessage(message, channel, user, subtype) {
         let numberOfPlayers = await countPlayersInGame(channel);
         updatePlayersInGame(channel, numberOfPlayers);
         // bot.postMessage(channel, 'Welcome to your adventure. Your task is to defeat monsters of increasing difficulty in order to save your office and collect rewards. Your first opponent is JAMMED PRINTER, the fearless. Please begin your battle by typing "@MUD_Bot Attack"! Good Luck!');
-        nextMsg = nextMsg.concat('Welcome to your adventure. Your task is to defeat monsters of increasing difficulty in order to save your office and collect rewards. Your first opponent is JAMMED PRINTER, the fearless. Please begin your battle by typing "@MUD_Bot Attack"! Good Luck!');
+        nextMsg = nextMsg.concat('Welcome to your adventure.\nYour task is to defeat monsters of increasing difficulty in order to save your office and collect rewards.\nYour first opponent is *JAMMED PRINTER, the fearless*.\nEach player can choose one action per turn:\n- "@MUD_Bot attack"\n- "@MUD_Bot dodge"\n- "@MUD_Bot heal"\nGood Luck!');
       }
     }
 
@@ -129,7 +129,7 @@ async function handleMessage(message, channel, user, subtype) {
             // update game progression
             updateProgression(channel, prog + 1);
             // create next boss instance
-            game_logic.createNextBossInstance(db, channel, prog + 1);
+            await game_logic.createNextBossInstance(db, channel, prog + 1);
             // get boss name
             bossName = await game_logic.getBossName(db, channel, prog + 1)
             // send message about next event
@@ -228,7 +228,7 @@ function startGame(channel) {
     // get the last insert id
     console.log(`A row has been inserted with rowid ${this.lastID}`);
   });
-  bot.postMessage(channel, `Game created. Please choose your individual classes by typing @MUD_Bot register <class name>. You are able to play as a WIZARD, a WARRIOR, or an ARCHER.`);
+  bot.postMessage(channel, `Game created.\nPlease choose your character type by typing "@MUD_Bot register <character type>".\nYour options are:\n- *WIZARD*\n- *WARRIOR*\n- *ARCHER*`);
 }
 
 function updateProgression(channel, prog) {
@@ -248,10 +248,11 @@ function createCharacter(channel, user, profession) {
         return console.error(err.message);
       }
       if (row) {
-        db.run(`UPDATE players SET class = ? health = 100 taken_turn = 0 is_dodging = 0 WHERE slack_id = ? AND channel_id = ?`, [profession, user, channel] , function(err) {
+        db.run(`UPDATE players SET class = ?, health = 100, taken_turn = 0, is_dodging = 0 WHERE slack_id = ? AND channel_id = ?`, [profession, user, channel] , function(err) {
           if (err) {
             return console.log(err.message);
           }
+          bot.postMessage(channel, `Updated class to *${profession}*. Please type "@MUD_Bot ready" when all players are ready to begin the adventure!`);
           resolve(`Updated ${user}'s character.'`);
         });
       } else {
@@ -259,7 +260,7 @@ function createCharacter(channel, user, profession) {
           if (err) {
             return console.log(err.message);
           }
-          bot.postMessage(channel, `${profession} chosen. Please type "@MUD_Bot ready" when all players are ready to begin the adventure!`);
+          bot.postMessage(channel, `*${profession}* chosen. Please type "@MUD_Bot ready" when all players are ready to begin the adventure!`);
           resolve(`Created ${user}'s character.'`);
         });
       }

@@ -77,7 +77,6 @@ module.exports = {
     })
   },
 
-
   createNextBossInstance: function(db, channel, progression) {
     return new Promise(resolve => {
       db.get(`SELECT * FROM boss_info WHERE pk = ?`, [progression], (err, row) => {
@@ -86,15 +85,14 @@ module.exports = {
         }
         const health = row.health;
         const name = row.name;
-        db.run(`INSERT INTO boss_instances(channel_id, boss_id, health, total_health, name) VALUES (?,?,?,?, ?)`, [channel, progression, health, health, name]), function(err) {
+        db.run(`INSERT INTO boss_instances(channel_id, boss_id, health, total_health, name) VALUES (?,?,?,?, ?)`, [channel, progression, health, health, name], function(err) {
           if (err) {
             console.error(err.message);
           }
-          // resolve("this resolved");
-        }
-        resolve("this resolved");
-      })
-    })
+          resolve("New boss instance created");
+        });
+      });
+    });
   },
 
 
