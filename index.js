@@ -121,19 +121,24 @@ async function handleMessage(message, channel, user, subtype) {
 
 
           // if boss is defeated
-          if (false) {
+          let bossHealthCheck = await game_logic.getBossHealth(db, channel, prog);
+
+          if (bossHealthCheck[0] <= 0) {
             // declare victory
             nextMsg = nextMsg.concat('You defeated the boss!\n');
             // update game progression
             updateProgression(channel, prog + 1);
             // create next boss instance
             game_logic.createNextBossInstance(db, channel, prog + 1);
+            // get boss name
+            bossName = await game_logic.getBossName(db, channel, prog + 1)
             // send message about next event
-            nextMsg = nextMsg.concat('Get ready for the next boss!\n');
+            nextMsg = nextMsg.concat(`Get ready for the next boss, ${bossName} \n`);
             // reset all player turn flags
-            game_logic.resetPlayerTurnFlags(db, channel);
+            await game_logic.resetPlayerTurnFlags(db, channel);
             // reset count of turns taken
-            game_logic.resetCountOfTurns(db, channel);
+            await game_logic.resetCountOfTurns(db, channel);
+            // bot.postMessage(channel, nextMsg);
           } else {
             // update player's turn flag
             await game_logic.markTurnTaken(db, channel, user);
@@ -206,7 +211,8 @@ async function handleMessage(message, channel, user, subtype) {
         }
       }
     }
-
+    console.log(nextMsg);
+    console.log("============================\n");
     bot.postMessage(channel, nextMsg);
 
   }
@@ -299,3 +305,23 @@ function findProgression(channel){
     });
   });
 }
+
+// createNextBossInstance: function(db, channel, progression) {
+//   // return new Promise(resolve => {
+//   db.get(`SELECT * FROM boss_info WHERE pk = ?`, [progression], (err, row) => {
+//     if (err) {
+//       return console.error(err.message);
+//     }
+//     const health = row.health;
+//     const name = row.name;
+//     db.run(`INSERT INTO boss_instances(channel_id, boss_id, health, total_health, name) VALUES (?,?,?,?, ?)`, [channel, progression, health, health, name]), function(err) {
+//       if (err) {
+//         console.error(err.message);
+//       }
+//       return new Promise(resolve => {
+//         resolve('this resolved');
+//       })
+//     }
+//   // })
+//   })
+// },

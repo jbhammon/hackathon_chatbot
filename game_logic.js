@@ -85,12 +85,14 @@ module.exports = {
           return console.error(err.message);
         }
         const health = row.health;
-        db.run(`INSERT INTO boss_instances(channel_id, boss_id, health, total_health) VALUES (?,?,?,?)`, [channel, progression, health, health]), err => {
+        const name = row.name;
+        db.run(`INSERT INTO boss_instances(channel_id, boss_id, health, total_health, name) VALUES (?,?,?,?, ?)`, [channel, progression, health, health, name]), function(err) {
           if (err) {
-            return console.error(err.message);
+            console.error(err.message);
           }
-          resolve(`New boss instance for channel ${channel} at progression ${progression} created.`);
+          // resolve("this resolved");
         }
+        resolve("this resolved");
       })
     })
   },
@@ -257,6 +259,17 @@ module.exports = {
         }
         let healthArray = [row.health, row.total_health]
         resolve(healthArray);
+      });
+    });
+  },
+  getBossName: function(db, channel, progression) {
+    return new Promise(resolve => {
+      db.get(`SELECT * FROM boss_instances WHERE channel_id = ? AND boss_id = ?`, [channel, progression], (err, row) => {
+        if (err) {
+          return console.error(err.message);
+        }
+        let newName = row.name
+        resolve(newName);
       });
     });
   },
