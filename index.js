@@ -179,11 +179,11 @@ async function handleMessage(message, channel, user, subtype) {
 
                 let damageResult = await game_logic.damagePlayer(db, channel, victim, bossDamage)
                 if (damageResult === "damaged"){
-                  nextMsg = nextMsg.concat(`The boss attacked ${userHandle} and dealt ${bossDamage} damage.`)
+                  nextMsg = nextMsg.concat(`The boss attacked ${userHandle} and dealt ${bossDamage} damage.\n`)
                 } else if (damageResult === "dodged") {
-                  nextMsg = nextMsg.concat(`${userHandle} dodged the boss's attack and took no damage.`)
+                  nextMsg = nextMsg.concat(`${userHandle} dodged the boss's attack and took no damage.\n`)
                 } else if (damageResult === 'unconscious') {
-                  nextMsg = nextMsg.concat(`The boss attacked ${userHandle}. It dealt ${bossDamage} damage and ${userHandle} is now unconscious.`);
+                  nextMsg = nextMsg.concat(`The boss attacked ${userHandle}. It dealt ${bossDamage} damage and ${userHandle} is now unconscious.\n`);
                 }
               }
 
@@ -196,11 +196,10 @@ async function handleMessage(message, channel, user, subtype) {
                 nextMsg = nextMsg.concat('Everyone in the party is unconscious, better luck next time!\n');
                 // reset progression to 0
                 updateProgression(channel, 0);
-              }
-              // else
+              } else {
                 // send message that it's the players' turns again
-                // bot.postMessage(channel, 'It\'s your turn again!');
                 nextMsg = nextMsg.concat('It\'s the player\'s turn again!\n');
+              }
             } else {
               // Send message that players still have turns to take
             }
